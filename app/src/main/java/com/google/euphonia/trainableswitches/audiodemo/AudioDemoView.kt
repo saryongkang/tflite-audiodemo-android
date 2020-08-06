@@ -20,10 +20,11 @@ import java.nio.FloatBuffer
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
+import kotlin.math.ceil
+import kotlin.math.sin
 
 /**
  * Audio demo view for the Euphonia Audio Model Demo app.
- *
  *
  * View loads and runs the TFLite audio model for inference in real time and displays the
  * recognition results on the screen along with the input audio signal.
@@ -34,7 +35,7 @@ internal class AudioDemoView(context: Context) : View(context) {
     /** The TFLite interpreter instance.  */
     private var interpreter: Interpreter? = null
 
-    /** Audio length (in # of PCM sapmles) required by the TFLite model.  */
+    /** Audio length (in # of PCM samples) required by the TFLite model.  */
     private var modelInputLength = 0
 
     /** Number of output classes of the TFLite model.  */
@@ -55,13 +56,6 @@ internal class AudioDemoView(context: Context) : View(context) {
     /** Buffer that holds audio PCM sample that are fed to the TFLite model for inference.  */
     private var inputBuffer: FloatBuffer? = null
     private var plotter: Plotter? = null
-    fun cleanup() {
-        if (interpreter != null) {
-            // Release resources held by the TFLite interpreter.
-            interpreter!!.close()
-            interpreter = null
-        }
-    }
 
     override fun onDraw(canvas: Canvas) {
         canvas.drawColor(Color.BLACK)
@@ -79,6 +73,14 @@ internal class AudioDemoView(context: Context) : View(context) {
         }
     }
 
+    fun cleanup() {
+        if (interpreter != null) {
+            // Release resources held by the TFLite interpreter.
+            interpreter!!.close()
+            interpreter = null
+        }
+    }
+
     /** Load TFLite model and prepare it for inference  */
     private fun setUpAudioModel() {
         loadModelMetadata()
@@ -88,10 +90,7 @@ internal class AudioDemoView(context: Context) : View(context) {
                 FileUtil.loadMappedFile(context, MODEL_PATH)
             Log.i(
                 Utils.AUDIO_DEMO_TAG,
-                String.format(
-                    "Done creating TFLite buffer from %s",
-                    MODEL_PATH
-                )
+                "Done creating TFLite buffer from $MODEL_PATH"
             )
             Interpreter(
                 tfliteBuffer,
@@ -100,7 +99,7 @@ internal class AudioDemoView(context: Context) : View(context) {
         } catch (e: IOException) {
             Log.e(
                 Utils.AUDIO_DEMO_TAG,
-                String.format("Switches: Failed to call TFLite model(): %s", e.message)
+                "Switches: Failed to call TFLite model(): ${e.message}"
             )
             return
         }
@@ -108,31 +107,23 @@ internal class AudioDemoView(context: Context) : View(context) {
         val inputShape = interpreter!!.getInputTensor(0).shape()
         Log.i(
             Utils.AUDIO_DEMO_TAG,
-            String.format(
-                "TFLite model input shape: %s",
-                Arrays.toString(inputShape)
-            )
+            "TFLite model input shape: ${Arrays.toString(inputShape)}"
         )
         val outputShape = interpreter!!.getOutputTensor(0).shape()
         Log.i(
             Utils.AUDIO_DEMO_TAG,
-            String.format("TFLite output shape: %s", Arrays.toString(outputShape))
+            "TFLite output shape: ${Arrays.toString(outputShape)}"
         )
         modelInputLength = inputShape[1]
         modelNumClasses = outputShape[1]
         if (modelNumClasses != classNames.size) {
             Log.e(
-                Utils.AUDIO_DEMO_TAG, String.format(
-                    "Mismatch between metadata number of classes (%d)" + " and model output length (%d)",
-                    classNames.size, modelNumClasses
-                )
+                Utils.AUDIO_DEMO_TAG,
+                "Mismatch between metadata number of classes (${classNames.size})" + " and model output length (${modelNumClasses})"
             )
         }
-        predictionProbs = FloatArray(modelNumClasses)
         // Fill the array with NaNs initially.
-        for (i in 0 until modelNumClasses) {
-            predictionProbs[i] = Float.NaN
-        }
+        predictionProbs = FloatArray(modelNumClasses) { Float.NaN }
 
         // Warm the model up by running inference with some dummy input data.
         inputBuffer = FloatBuffer.allocate(modelInputLength)
@@ -161,7 +152,7 @@ internal class AudioDemoView(context: Context) : View(context) {
         val twoPiTimesFreq = 2 * Math.PI.toFloat() * 1000f
         for (i in 0 until modelInputLength) {
             val x = i.toFloat() / (modelInputLength - 1)
-            inputBuffer!!.put(i, Math.sin(twoPiTimesFreq * x.toDouble()).toFloat())
+            inputBuffer!!.put(i, sin(twoPiTimesFreq * x.toDouble()).toFloat())
         }
     }
 
@@ -178,20 +169,15 @@ internal class AudioDemoView(context: Context) : View(context) {
             while (reader.readLine().also { line = it } != null) {
                 jsonStringBuilder.append(line)
             }
-            val parser = JsonParser()
-            val metadata = parser.parse(jsonStringBuilder.toString()) as JsonObject
+            val metadata = JsonParser.parseString(jsonStringBuilder.toString()) as JsonObject
             val wordLabels =
                 metadata[WORD_LABELS_KEY].asJsonArray
             classNames = wordLabels.map { it.asString }.toTypedArray()
-            plotter = Plotter(
-                context,
-                classNames,
-                PROB_THRESHOLD
-            )
+            plotter = Plotter(context, classNames, PROB_THRESHOLD)
         } catch (e: IOException) {
             Log.e(
                 Utils.AUDIO_DEMO_TAG,
-                String.format("Failed to read model metadata.json: %s", e.message)
+                "Failed to read model metadata.json: ${e.message}"
             )
         } finally {
             if (reader != null) {
@@ -221,7 +207,7 @@ internal class AudioDemoView(context: Context) : View(context) {
                 bufferSize = SAMPLE_RATE_HZ * 2
                 Log.e(Utils.AUDIO_DEMO_TAG, "bufferSize has error or bad value")
             }
-            Log.i(Utils.AUDIO_DEMO_TAG, String.format("bufferSize = %d", bufferSize))
+            Log.i(Utils.AUDIO_DEMO_TAG, "bufferSize = $bufferSize")
             val record =
                 AudioRecord( // TODO(cais): Add UI affordance for choosing other AudioSource values,
                     // including MIC, UNPROCESSED, and CAMCORDER.
@@ -235,20 +221,18 @@ internal class AudioDemoView(context: Context) : View(context) {
                 Log.e(Utils.AUDIO_DEMO_TAG, "AudioRecord failed to initialize")
                 return
             }
-            Log.i(Utils.AUDIO_DEMO_TAG, "Successfully intialized AudioRecord")
+            Log.i(Utils.AUDIO_DEMO_TAG, "Successfully initialized AudioRecord")
             val bufferSamples = bufferSize / 2
             val audioBuffer = ShortArray(bufferSamples)
             val recordingBufferSamples =
-                Math.ceil(modelInputLength.toFloat() / bufferSamples.toDouble())
+                ceil(modelInputLength.toFloat() / bufferSamples.toDouble())
                     .toInt() * bufferSamples
-            Log.i(
-                Utils.AUDIO_DEMO_TAG,
-                String.format("recordingBufferSamples = %d", recordingBufferSamples)
-            )
+            Log.i(Utils.AUDIO_DEMO_TAG, "recordingBufferSamples = $recordingBufferSamples")
             recordingOffset = 0
             recordingBuffer = ShortArray(recordingBufferSamples)
             record.startRecording()
             Log.i(Utils.AUDIO_DEMO_TAG, "Successfully started AudioRecord recording")
+
             // Start recognition (model inference) thread.
             startRecognition()
             while (true) {
@@ -260,31 +244,36 @@ internal class AudioDemoView(context: Context) : View(context) {
                         "Sleep interrupted in audio recording thread."
                     )
                 }
-                val numRead = record.read(audioBuffer, 0, audioBuffer.size)
-                if (numRead == AudioRecord.ERROR_INVALID_OPERATION) {
-                    Log.w(Utils.AUDIO_DEMO_TAG, "AudioRecord.ERROR_INVALID_OPERATION")
-                } else if (numRead == AudioRecord.ERROR_BAD_VALUE) {
-                    Log.w(Utils.AUDIO_DEMO_TAG, "AudioRecord.ERROR_BAD_VALUE")
-                } else if (numRead == AudioRecord.ERROR_DEAD_OBJECT) {
-                    Log.w(Utils.AUDIO_DEMO_TAG, "AudioRecord.ERROR_DEAD_OBJECT")
-                } else if (numRead == AudioRecord.ERROR) {
-                    Log.w(Utils.AUDIO_DEMO_TAG, "AudioRecord.ERROR")
-                } else if (numRead == bufferSamples) {
-                    // We apply locks here to avoid two separate threads (the recording and
-                    // recognition threads) reading and writing from the recordingBuffer at the same
-                    // time, which can cause the recognition thread to read garbled audio snippets.
-                    recordingBufferLock.lock()
-                    recordingOffset = try {
-                        System.arraycopy(
-                            audioBuffer,
-                            0,
-                            recordingBuffer,
-                            recordingOffset,
-                            bufferSamples
-                        )
-                        (recordingOffset + bufferSamples) % recordingBufferSamples
-                    } finally {
-                        recordingBufferLock.unlock()
+                when (record.read(audioBuffer, 0, audioBuffer.size)) {
+                    AudioRecord.ERROR_INVALID_OPERATION -> {
+                        Log.w(Utils.AUDIO_DEMO_TAG, "AudioRecord.ERROR_INVALID_OPERATION")
+                    }
+                    AudioRecord.ERROR_BAD_VALUE -> {
+                        Log.w(Utils.AUDIO_DEMO_TAG, "AudioRecord.ERROR_BAD_VALUE")
+                    }
+                    AudioRecord.ERROR_DEAD_OBJECT -> {
+                        Log.w(Utils.AUDIO_DEMO_TAG, "AudioRecord.ERROR_DEAD_OBJECT")
+                    }
+                    AudioRecord.ERROR -> {
+                        Log.w(Utils.AUDIO_DEMO_TAG, "AudioRecord.ERROR")
+                    }
+                    bufferSamples -> {
+                        // We apply locks here to avoid two separate threads (the recording and
+                        // recognition threads) reading and writing from the recordingBuffer at the same
+                        // time, which can cause the recognition thread to read garbled audio snippets.
+                        recordingBufferLock.lock()
+                        recordingOffset = try {
+                            System.arraycopy(
+                                audioBuffer,
+                                0,
+                                recordingBuffer,
+                                recordingOffset,
+                                bufferSamples
+                            )
+                            (recordingOffset + bufferSamples) % recordingBufferSamples
+                        } finally {
+                            recordingBufferLock.unlock()
+                        }
                     }
                 }
             }
@@ -323,8 +312,7 @@ internal class AudioDemoView(context: Context) : View(context) {
                     if (recordingBuffer == null) {
                         continue
                     }
-                    var j = recordingOffset - modelInputLength
-                    j = j % modelInputLength
+                    var j = (recordingOffset - modelInputLength) % modelInputLength
                     if (j < 0) {
                         j += modelInputLength
                     }

@@ -10,7 +10,11 @@ import android.os.SystemClock
 import android.util.DisplayMetrics
 import java.nio.FloatBuffer
 
-/** Helper functions for making plots.  */
+/** Helper functions for making plots.
+ * @param classNames Output class names of the model.
+ * @param probThreshold Threshold probability value, above which a non-background-noise class is
+ * considered active (i.e., a suprthreshold or positive event).
+ */
 class Plotter(
     private val context: Context,
     private val classNames: Array<String>,
@@ -36,6 +40,21 @@ class Plotter(
     private var axesTextPaint: Paint? = null
     private lateinit var classTracePaints: Array<Paint?>
     private lateinit var classTextPaints: Array<Paint?>
+
+    /**
+     * Constructor of Plotter.
+     */
+    init {
+        val displayMetrics = screenDimensions
+        startTimeNanos = SystemClock.elapsedRealtimeNanos()
+        screenHeight = displayMetrics.heightPixels
+        screenWidth = displayMetrics.widthPixels
+        historyProbs =
+            Array(screenWidth) { FloatArray(classNames.size) }
+        historyProbsIndex = 0
+        numPositiveEvents = 0
+        createPaints()
+    }
 
     /**
      * Plot a FloatBuffer as a curve on in a canvas.
@@ -203,7 +222,7 @@ class Plotter(
     }
 
     private val screenDimensions: DisplayMetrics
-        private get() {
+        get() {
             val displayMetrics = DisplayMetrics()
             (context as Activity).windowManager.defaultDisplay.getMetrics(displayMetrics)
             return displayMetrics
@@ -211,45 +230,48 @@ class Plotter(
 
     /** Create Paint objects for later use.  */
     private fun createPaints() {
-        basicTextPaint = Paint()
-        basicTextPaint!!.style = Paint.Style.FILL
-        basicTextPaint!!.color = Color.GRAY
-        basicTextPaint!!.strokeWidth = 1f
-        basicTextPaint!!.textSize = TEXT_LINE_HEIGHT
-        supraThresholdTextPaint = Paint()
-        supraThresholdTextPaint!!.style = Paint.Style.FILL
-        supraThresholdTextPaint!!.color = Color.GREEN
-        supraThresholdTextPaint!!.strokeWidth = 1f
-        supraThresholdTextPaint!!.textSize = TEXT_LINE_HEIGHT
-        waveformPaint = Paint()
-        waveformPaint!!.style = Paint.Style.STROKE
-        waveformPaint!!.color = Color.GRAY
-        waveformPaint!!.strokeWidth = 1f
-        axesPaint = Paint()
-        axesPaint!!.style = Paint.Style.STROKE
-        axesPaint!!.color = Color.DKGRAY
-        axesPaint!!.strokeWidth = 1f
-        axesTextPaint = Paint()
-        axesTextPaint!!.style = Paint.Style.FILL
-        axesTextPaint!!.color = Color.DKGRAY
-        axesTextPaint!!.textSize = HISTORY_PLOT_TEXT_SIZE
-        classTracePaints =
-            arrayOfNulls(classColors.size)
-        classTextPaints =
-            arrayOfNulls(classColors.size)
+        basicTextPaint = Paint().apply {
+            style = Paint.Style.FILL
+            color = Color.GRAY
+            strokeWidth = 1f
+            textSize = TEXT_LINE_HEIGHT
+        }
+        supraThresholdTextPaint = Paint().apply {
+            style = Paint.Style.FILL
+            color = Color.GREEN
+            strokeWidth = 1f
+            textSize = TEXT_LINE_HEIGHT
+        }
+        waveformPaint = Paint().apply {
+            style = Paint.Style.STROKE
+            color = Color.GRAY
+            strokeWidth = 1f
+        }
+        axesPaint = Paint().apply {
+            style = Paint.Style.STROKE
+            color = Color.DKGRAY
+            strokeWidth = 1f
+        }
+        axesTextPaint = Paint().apply {
+            style = Paint.Style.FILL
+            color = Color.DKGRAY
+            textSize = HISTORY_PLOT_TEXT_SIZE
+        }
+        classTracePaints = arrayOfNulls(classColors.size)
+        classTextPaints = arrayOfNulls(classColors.size)
         for (i in classColors.indices) {
-            val tracePaint = Paint()
-            tracePaint.style = Paint.Style.STROKE
-            tracePaint.color = classColors[i]
-            tracePaint.strokeWidth = 1f
-            tracePaint.textSize = HISTORY_PLOT_TEXT_SIZE
-            classTracePaints[i] = tracePaint
-            val textPaint = Paint()
-            textPaint.style = Paint.Style.FILL
-            textPaint.color = classColors[i]
-            textPaint.strokeWidth = 1f
-            textPaint.textSize = HISTORY_PLOT_TEXT_SIZE
-            classTextPaints[i] = textPaint
+            classTracePaints[i] = Paint().apply {
+                style = Paint.Style.STROKE
+                color = classColors[i]
+                strokeWidth = 1f
+                textSize = HISTORY_PLOT_TEXT_SIZE
+            }
+            classTextPaints[i] = Paint().apply {
+                style = Paint.Style.FILL
+                color = classColors[i]
+                strokeWidth = 1f
+                textSize = HISTORY_PLOT_TEXT_SIZE
+            }
         }
     }
 
@@ -285,25 +307,5 @@ class Plotter(
             Color.MAGENTA,
             Color.RED
         )
-    }
-
-    /**
-     * Constructor of Plotter.
-     *
-     * @param context Android app context.
-     * @param classNames Output class names of the model.
-     * @param probThreshold Threshold probability value, above which a non-background-noise class is
-     * considered active (i.e., a suprthreshold or positive event).
-     */
-    init {
-        val displayMetrics = screenDimensions
-        startTimeNanos = SystemClock.elapsedRealtimeNanos()
-        screenHeight = displayMetrics.heightPixels
-        screenWidth = displayMetrics.widthPixels
-        historyProbs =
-            Array(screenWidth) { FloatArray(classNames.size) }
-        historyProbsIndex = 0
-        numPositiveEvents = 0
-        createPaints()
     }
 }
