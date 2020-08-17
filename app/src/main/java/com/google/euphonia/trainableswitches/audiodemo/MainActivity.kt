@@ -55,7 +55,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-
     private fun requestMicrophonePermission() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
             audioDemoView.startAudioRecord();

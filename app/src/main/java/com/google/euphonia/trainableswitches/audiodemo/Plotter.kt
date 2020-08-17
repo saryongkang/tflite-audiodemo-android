@@ -107,7 +107,7 @@ class Plotter(
             basicTextPaint!!
         )
         currentY += TEXT_LINE_HEIGHT
-        if (predictionProbs.size == 0) {
+        if (predictionProbs.isEmpty()) {
             return
         }
         if (java.lang.Float.isNaN(predictionProbs[0])) {

@@ -266,7 +266,7 @@ internal class AudioDemoView(context: Context) : View(context) {
                             System.arraycopy(
                                 audioBuffer,
                                 0,
-                                recordingBuffer,
+                                recordingBuffer!!,
                                 recordingOffset,
                                 bufferSamples
                             )
