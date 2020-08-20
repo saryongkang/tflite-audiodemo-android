@@ -237,7 +237,7 @@ internal class AudioDemoView(context: Context) : View(context) {
             startRecognition()
             while (true) {
                 try {
-                    TimeUnit.MILLISECONDS.sleep(AUDIO_PULL_PERIOD_MS.toLong())
+                    TimeUnit.MILLISECONDS.sleep(AUDIO_PULL_PERIOD_MS)
                 } catch (e: InterruptedException) {
                     Log.e(
                         Utils.AUDIO_DEMO_TAG,
@@ -263,13 +263,7 @@ internal class AudioDemoView(context: Context) : View(context) {
                         // time, which can cause the recognition thread to read garbled audio snippets.
                         recordingBufferLock.lock()
                         recordingOffset = try {
-                            System.arraycopy(
-                                audioBuffer,
-                                0,
-                                recordingBuffer!!,
-                                recordingOffset,
-                                bufferSamples
-                            )
+                            audioBuffer.copyInto(recordingBuffer!!, recordingOffset, 0, bufferSamples)
                             (recordingOffset + bufferSamples) % recordingBufferSamples
                         } finally {
                             recordingBufferLock.unlock()
@@ -302,7 +296,7 @@ internal class AudioDemoView(context: Context) : View(context) {
             val outputBuffer = FloatBuffer.allocate(modelNumClasses)
             while (true) {
                 try {
-                    TimeUnit.MILLISECONDS.sleep(RECOGNITION_PERIOD_MS.toLong())
+                    TimeUnit.MILLISECONDS.sleep(RECOGNITION_PERIOD_MS)
                 } catch (e: InterruptedException) {
                     Log.e(Utils.AUDIO_DEMO_TAG, "Sleep interrupted in recognition thread.")
                 }
@@ -346,7 +340,7 @@ internal class AudioDemoView(context: Context) : View(context) {
                 outputBuffer.rewind()
                 interpreter!!.run(inputBuffer, outputBuffer)
                 outputBuffer.rewind()
-                outputBuffer[predictionProbs] // Copy data to predictionProbs.
+                outputBuffer.get(predictionProbs) // Copy data to predictionProbs.
                 latestPredictionLatencyMs =
                     ((SystemClock.elapsedRealtimeNanos() - t0) / 1e6).toFloat()
                 invalidate()
