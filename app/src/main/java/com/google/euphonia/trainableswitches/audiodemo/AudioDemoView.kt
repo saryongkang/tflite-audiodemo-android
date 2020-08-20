@@ -317,7 +317,13 @@ internal class AudioDemoView(context: Context) : View(context) {
                         j += modelInputLength
                     }
                     for (i in 0 until modelInputLength) {
-                        val s = recordingBuffer!![j++ % modelInputLength]
+                        val s = if (i >= POINTS_IN_AVG && j >= POINTS_IN_AVG) {
+                            ((j - POINTS_IN_AVG + 1)..j).map { recordingBuffer!![it % modelInputLength] }.average()
+                        } else {
+                            recordingBuffer!![j % modelInputLength]
+                        }
+                        j += 1
+
                         if (samplesAreAllZero && s.toInt() != 0) {
                             samplesAreAllZero = false
                         }
@@ -368,16 +374,18 @@ internal class AudioDemoView(context: Context) : View(context) {
         private const val SAMPLE_RATE_HZ = 44100
 
         /** How many milliseconds to sleep between successive audio sample pulls.  */
-        private const val AUDIO_PULL_PERIOD_MS = 50
+        private const val AUDIO_PULL_PERIOD_MS = 50L
 
         /** How many milliseconds between consecutive model inference calls.  */ // TODO(cais): Make this configurable.
-        private const val RECOGNITION_PERIOD_MS = 250
+        private const val RECOGNITION_PERIOD_MS = 250L
 
         /** Number of warmup runs to do after loading the TFLite model.  */
         private const val NUM_WARMUP_RUNS = 3
 
         /** Probability value above which a class is labeled as active (i.e., detected) the display.  */
         private const val PROB_THRESHOLD = 0.9f
+
+        private const val POINTS_IN_AVG = 10
     }
 
     init {
