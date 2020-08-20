@@ -370,8 +370,10 @@ internal class AudioDemoView(context: Context) : View(context) {
         /** How many milliseconds to sleep between successive audio sample pulls.  */
         private const val AUDIO_PULL_PERIOD_MS = 50L
 
+        private const val OVERLAP_FACTOR = 0.8
+
         /** How many milliseconds between consecutive model inference calls.  */ // TODO(cais): Make this configurable.
-        private const val RECOGNITION_PERIOD_MS = 250L
+        private const val RECOGNITION_PERIOD_MS = (1000L * (1 - OVERLAP_FACTOR)).toLong()
 
         /** Number of warmup runs to do after loading the TFLite model.  */
         private const val NUM_WARMUP_RUNS = 3
