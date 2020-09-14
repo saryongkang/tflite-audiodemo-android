@@ -6,13 +6,149 @@
     android:layout_height="match_parent"
     tools:context=".MainActivity">
 
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="#8000"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/tensorflow_lite_logo"
+            android:src="@drawable/tfl2_logo" />
+    </androidx.appcompat.widget.Toolbar>
+
     <TextView
+        android:id="@+id/overlap_factor_text_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello World!"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        android:text="@string/overlap_factor_label"
+        android:textColor="@color/colorPrimaryDark"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="@id/input_switch"
+        app:layout_constraintTop_toBottomOf="@id/input_switch" />
+
+    <com.google.android.material.slider.Slider
+        android:id="@+id/overlap_factor_slider"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="16dp"
+        android:value="0.8"
+        android:valueFrom="0.0"
+        android:valueTo="1.0"
+        app:layout_constraintBottom_toBottomOf="@+id/overlap_factor_text_view"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/overlap_factor_text_view"
+        app:layout_constraintTop_toTopOf="@id/overlap_factor_text_view" />
+
+    <View
+        android:id="@+id/divider_view"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="40dp"
+        android:layout_marginEnd="16dp"
+        android:background="@color/gray400"
+        app:layout_constraintTop_toBottomOf="@id/overlap_factor_text_view" />
+
+    <TextView
+        android:id="@+id/background_noise_text_view"
+        android:layout_width="80sp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:text="@string/label_background_noise"
+        android:textColor="#5d85c8"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/background_noise_progress_bar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/background_noise_progress_bar" />
+
+    <ProgressBar
+        android:id="@+id/background_noise_progress_bar"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="0dp"
+        android:layout_height="20dp"
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="40dp"
+        android:layout_marginEnd="16dp"
+        android:progressBackgroundTint="#f9e7e4"
+        android:progressTint="#d97c2e"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/background_noise_text_view"
+        app:layout_constraintTop_toTopOf="@id/divider_view"
+        tools:progress="25" />
+
+    <TextView
+        android:id="@+id/snap_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/label_snaps"
+        android:textColor="#5d85c8"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/snap_progress_bar"
+        app:layout_constraintStart_toStartOf="@+id/background_noise_text_view"
+        app:layout_constraintTop_toTopOf="@+id/snap_progress_bar" />
+
+    <ProgressBar
+        android:id="@+id/snap_progress_bar"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="0dp"
+        android:layout_height="20dp"
+        android:layout_marginTop="30dp"
+        android:layout_marginEnd="16dp"
+        android:progressBackgroundTint="#f7e3e8"
+        android:progressTint="#c95670"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/background_noise_progress_bar"
+        app:layout_constraintTop_toBottomOf="@+id/background_noise_progress_bar"
+        tools:progress="25" />
+
+    <TextView
+        android:id="@+id/clap_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/label_claps"
+        android:textColor="#5d85c8"
+        android:textStyle="bold"
+        app:layout_constraintBottom_toBottomOf="@+id/clap_progress_bar"
+        app:layout_constraintStart_toStartOf="@+id/snap_text_view"
+        app:layout_constraintTop_toTopOf="@+id/clap_progress_bar" />
+
+    <ProgressBar
+        android:id="@+id/clap_progress_bar"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="0dp"
+        android:layout_height="20dp"
+        android:layout_marginTop="30dp"
+        android:layout_marginEnd="16dp"
+        android:progressBackgroundTint="#ecf0f9"
+        android:progressTint="#714Fe7"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@+id/snap_progress_bar"
+        app:layout_constraintTop_toBottomOf="@+id/snap_progress_bar"
+        tools:progress="25" />
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/input_switch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="64dp"
+        android:checked="true"
+        android:text="@string/label_input"
+        android:textColor="@color/colorPrimaryDark"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/toolbar"
+        app:switchPadding="12dp"
+        app:useMaterialThemeColors="true" />
+
 
 </androidx.constraintlayout.widget.ConstraintLayout>

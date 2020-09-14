@@ -25,13 +25,6 @@ import kotlin.math.ceil
 import kotlin.math.sin
 
 public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
-    var lifecycleOwner: LifecycleOwner? = null
-        set(value) {
-            field = value?.also {
-                it.lifecycle.addObserver(this)
-            }
-        }
-
     val isRecording: Boolean
         get() = recordingThread?.isAlive == true
 
@@ -42,8 +35,32 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
     var isClosed: Boolean = true
         private set
 
+    var lifecycleOwner: LifecycleOwner? = null
+        set(value) {
+            field = value?.also {
+                it.lifecycle.addObserver(this)
+            }
+        }
+
+    /** Paused by user */
+    var isPaused: Boolean = false
+        set(value) {
+            field = value.also {
+                if (it) stop() else start()
+            }
+        }
+
+    var overlapFactor: Float = DEFAULT_OVERLAP_FACTOR
+        set(value) {
+            field = value.also {
+                recognitionPeriod = (1000L * (1 - value)).toLong()
+            }
+        }
+
     private val recordingBufferLock: ReentrantLock = ReentrantLock()
 
+    /** How many milliseconds between consecutive model inference calls.  */
+    private var recognitionPeriod = (1000L * (1 - DEFAULT_OVERLAP_FACTOR)).toLong()
 
     /** The TFLite interpreter instance.  */
     private lateinit var interpreter: Interpreter
@@ -78,7 +95,11 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
         warmUpModel()
     }
 
-    override fun onResume(owner: LifecycleOwner) = start()
+    override fun onResume(owner: LifecycleOwner) {
+        if (!isPaused) {
+            start()
+        }
+    }
 
     override fun onPause(owner: LifecycleOwner) = stop()
 
@@ -87,11 +108,16 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
     fun start() = startAudioRecord()
 
     fun stop() {
+        Log.d(">>>", "Stopping..")
+        Log.d(">>>", "$isClosed - $isRecording")
+
         if (isClosed || !isRecording) {
             return
         }
         recordingThread?.interrupt()
         recognitionThread?.interrupt()
+
+        _probabilities.postValue(FloatArray(3) { 0f })
     }
 
     fun close() {
@@ -195,6 +221,7 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
         recordingThread = AudioRecordingThread().apply {
             start()
         }
+        isClosed = false
     }
 
     /** Start a thread that runs model inference (i.e., recognition) at a regular interval.  */
@@ -248,7 +275,8 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
                 try {
                     TimeUnit.MILLISECONDS.sleep(AUDIO_PULL_PERIOD_MS)
                 } catch (e: InterruptedException) {
-                    Log.e(TAG, "Sleep interrupted in audio recording thread.")
+                    Log.w(TAG, "Sleep interrupted in audio recording thread.")
+                    break
                 }
                 when (record.read(audioBuffer, 0, audioBuffer.size)) {
                     AudioRecord.ERROR_INVALID_OPERATION -> {
@@ -269,7 +297,7 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
                         // time, which can cause the recognition thread to read garbled audio snippets.
                         recordingBufferLock.withLock {
                             audioBuffer.copyInto(
-                                recordingBuffer!!,
+                                recordingBuffer,
                                 recordingOffset,
                                 0,
                                 bufferSamples
@@ -292,9 +320,10 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
             val outputBuffer = FloatBuffer.allocate(modelNumClasses)
             while (!isInterrupted) {
                 try {
-                    TimeUnit.MILLISECONDS.sleep(RECOGNITION_PERIOD_MS)
+                    TimeUnit.MILLISECONDS.sleep(recognitionPeriod)
                 } catch (e: InterruptedException) {
-                    Log.e(TAG, "Sleep interrupted in recognition thread.")
+                    Log.w(TAG, "Sleep interrupted in recognition thread.")
+                    break
                 }
                 var samplesAreAllZero = true
 
@@ -362,10 +391,7 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
         /** How many milliseconds to sleep between successive audio sample pulls.  */
         private const val AUDIO_PULL_PERIOD_MS = 50L
 
-        private const val OVERLAP_FACTOR = 0.8
-
-        /** How many milliseconds between consecutive model inference calls.  */ // TODO(cais): Make this configurable.
-        private const val RECOGNITION_PERIOD_MS = (1000L * (1 - OVERLAP_FACTOR)).toLong()
+        private const val DEFAULT_OVERLAP_FACTOR = 0.8.toFloat()
 
         /** Number of warm up runs to do after loading the TFLite model.  */
         private const val NUM_WARMUP_RUNS = 3

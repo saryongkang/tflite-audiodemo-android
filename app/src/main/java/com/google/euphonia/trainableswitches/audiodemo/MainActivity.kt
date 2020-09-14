@@ -2,15 +2,18 @@ package com.google.euphonia.trainableswitches.audiodemo
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.google.euphonia.trainableswitches.audiodemo.Utils.AUDIO_DEMO_TAG
-
+import com.google.euphonia.trainableswitches.audiodemo.databinding.ActivityMainBinding
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var audioDemoView: AudioDemoView
+    private lateinit var soundClassifier: SoundClassifier
 
     // TODO: Uncomment this when androidx.activity library become stable
 //    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
@@ -25,18 +28,45 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //setContentView(R.layout.activity_main)
 
-        audioDemoView = AudioDemoView(this)
-        setContentView(audioDemoView)
+        val binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
 
-        requestMicrophonePermission()
-    }
+        soundClassifier = SoundClassifier(this).also {
+            it.lifecycleOwner = this
+        }
 
-    override fun onDestroy() {
-        audioDemoView.cleanup();
+        soundClassifier.probabilities.observe(this) { probs ->
+            if (probs.isEmpty() || probs.size > 3) {
+                Log.w(Utils.AUDIO_DEMO_TAG, "Invalid probability output!")
+                return@observe
+            }
+            binding.backgroundNoiseProgressBar.progress = (probs[0] * 100).toInt()
+            binding.snapProgressBar.progress = (probs[1] * 100).toInt()
+            binding.clapProgressBar.progress = (probs[2] * 100).toInt()
 
-        super.onDestroy()
+//            probs.forEachIndexed { i, prob ->
+//                Log.d(">>>", "%d: %.6f".format(i, prob))
+//            }
+        }
+
+        binding.backgroundNoiseTextView.text = soundClassifier.classNames[0].toTitleCase()
+        binding.snapTextView.text = soundClassifier.classNames[1].toTitleCase()
+        binding.clapTextView.text = soundClassifier.classNames[2].toTitleCase()
+
+        binding.inputSwitch.setOnCheckedChangeListener { _, isChecked ->
+            soundClassifier.isPaused = !isChecked
+        }
+
+        binding.overlapFactorSlider.addOnChangeListener { _, value, _ ->
+            soundClassifier.overlapFactor = value
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestMicrophonePermission()
+        } else {
+            soundClassifier.start()
+        }
     }
 
     // TODO: Remove this when androidx.activity library become stable
@@ -47,17 +77,25 @@ class MainActivity : AppCompatActivity() {
     ) {
         if (requestCode == REQUEST_RECORD_AUDIO) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.i(AUDIO_DEMO_TAG, "Audio permission granted :)");
-                audioDemoView.startAudioRecord();
+                Log.i(AUDIO_DEMO_TAG, "Audio permission granted :)")
+                //audioDemoView.startAudioRecord()
+                soundClassifier.start()
+
             } else {
-                Log.e(AUDIO_DEMO_TAG, "Audio permission not granted :(");
+                Log.e(AUDIO_DEMO_TAG, "Audio permission not granted :(")
             }
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     private fun requestMicrophonePermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED) {
-            audioDemoView.startAudioRecord();
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.RECORD_AUDIO
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            //audioDemoView.startAudioRecord()
+            soundClassifier.start()
         } else {
             // TODO: Uncomment this when androidx.activity library become stable
 //            requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
@@ -69,3 +107,8 @@ class MainActivity : AppCompatActivity() {
         const val REQUEST_RECORD_AUDIO = 1337
     }
 }
+
+private fun String.toTitleCase() =
+    splitToSequence("_")
+        .map { it.capitalize(Locale.ROOT) }
+        .joinToString(" ")
