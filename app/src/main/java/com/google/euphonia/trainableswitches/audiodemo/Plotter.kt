@@ -25,7 +25,7 @@ class Plotter(
     private val screenHeight: Int
 
     /**
-     * History traces of the output class probabilites. The first dimension is for time steps; the
+     * History traces of the output class probabilities. The first dimension is for time steps; the
      * second is for output classes.
      */
     private val historyProbs: Array<FloatArray>

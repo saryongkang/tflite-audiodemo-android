@@ -20,6 +20,7 @@ import java.nio.FloatBuffer
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 import kotlin.math.ceil
 import kotlin.math.sin
 
@@ -44,14 +45,17 @@ internal class AudioDemoView(context: Context) : View(context) {
     /** Names of the model's output classes.  */
     private lateinit var classNames: Array<String>
 
-    /** Used to hold the real-time probabilites predicted by the model for the output classes.  */
+    /** Used to hold the real-time probabilities predicted by the model for the output classes.  */
     private lateinit var predictionProbs: FloatArray
 
     /** Latest prediction latency in milliseconds.  */
     private var latestPredictionLatencyMs = 0f
+
     private var recordingThread: Thread? = null
+    private var recognitionThread: Thread? = null
+
     private var recordingOffset = 0
-    private var recordingBuffer: ShortArray? = null
+    private lateinit var recordingBuffer: ShortArray
 
     /** Buffer that holds audio PCM sample that are fed to the TFLite model for inference.  */
     private var inputBuffer: FloatBuffer? = null
@@ -64,19 +68,19 @@ internal class AudioDemoView(context: Context) : View(context) {
         }
 
         // Draw the prediction probabilities.
-        plotter!!.plotPredictions(canvas, predictionProbs, latestPredictionLatencyMs)
+        plotter?.plotPredictions(canvas, predictionProbs, latestPredictionLatencyMs)
         // TODO(cais): Add history plot of probabilities.
         // Draw the waveform.
-        if (inputBuffer != null) {
+        inputBuffer?.let {
             val waveformScalingFactor = 1f / 32768f
-            plotter!!.plotWaveform(canvas, inputBuffer!!, modelInputLength, waveformScalingFactor)
+            plotter?.plotWaveform(canvas, it, modelInputLength, waveformScalingFactor)
         }
     }
 
     fun cleanup() {
         if (interpreter != null) {
             // Release resources held by the TFLite interpreter.
-            interpreter!!.close()
+            interpreter?.close()
             interpreter = null
         }
     }
@@ -127,7 +131,7 @@ internal class AudioDemoView(context: Context) : View(context) {
 
         // Warm the model up by running inference with some dummy input data.
         inputBuffer = FloatBuffer.allocate(modelInputLength)
-        generateDummyAudioInput(inputBuffer)
+        generateDummyAudioInput(inputBuffer!!)
         for (n in 0 until NUM_WARMUP_RUNS) {
             // Create input and output buffers.
             val outputBuffer = FloatBuffer.allocate(modelNumClasses)
@@ -148,30 +152,24 @@ internal class AudioDemoView(context: Context) : View(context) {
         startAudioRecord()
     }
 
-    private fun generateDummyAudioInput(inputBuffer: FloatBuffer?) {
+    private fun generateDummyAudioInput(inputBuffer: FloatBuffer) {
         val twoPiTimesFreq = 2 * Math.PI.toFloat() * 1000f
         for (i in 0 until modelInputLength) {
             val x = i.toFloat() / (modelInputLength - 1)
-            inputBuffer!!.put(i, sin(twoPiTimesFreq * x.toDouble()).toFloat())
+            inputBuffer.put(i, sin(twoPiTimesFreq * x.toDouble()).toFloat())
         }
     }
 
     private fun loadModelMetadata() {
-        var reader: BufferedReader? = null
         try {
-            reader = BufferedReader(
-                InputStreamReader(
-                    context.assets.open(METADATA_PATH)
-                )
-            )
+            val reader = BufferedReader(InputStreamReader(context.assets.open(METADATA_PATH)))
             val jsonStringBuilder = StringBuilder()
-            var line: String?
-            while (reader.readLine().also { line = it } != null) {
-                jsonStringBuilder.append(line)
+            reader.useLines { lines ->
+                lines.forEach { jsonStringBuilder.append(it) }
             }
+
             val metadata = JsonParser.parseString(jsonStringBuilder.toString()) as JsonObject
-            val wordLabels =
-                metadata[WORD_LABELS_KEY].asJsonArray
+            val wordLabels = metadata[WORD_LABELS_KEY].asJsonArray
             classNames = wordLabels.map { it.asString }.toTypedArray()
             plotter = Plotter(context, classNames, PROB_THRESHOLD)
         } catch (e: IOException) {
@@ -179,24 +177,10 @@ internal class AudioDemoView(context: Context) : View(context) {
                 Utils.AUDIO_DEMO_TAG,
                 "Failed to read model metadata.json: ${e.message}"
             )
-        } finally {
-            if (reader != null) {
-                try {
-                    reader.close()
-                } catch (e: IOException) {
-                    Log.e(
-                        Utils.AUDIO_DEMO_TAG,
-                        String.format(
-                            "Failed to close reader for asset file %s",
-                            METADATA_PATH
-                        )
-                    )
-                }
-            }
         }
     }
 
-    internal inner class AudioRecordingRunnable : Runnable {
+    private inner class AudioRecordingRunnable : Runnable {
         override fun run() {
             var bufferSize = AudioRecord.getMinBufferSize(
                 SAMPLE_RATE_HZ,
@@ -261,12 +245,9 @@ internal class AudioDemoView(context: Context) : View(context) {
                         // We apply locks here to avoid two separate threads (the recording and
                         // recognition threads) reading and writing from the recordingBuffer at the same
                         // time, which can cause the recognition thread to read garbled audio snippets.
-                        recordingBufferLock.lock()
-                        recordingOffset = try {
-                            audioBuffer.copyInto(recordingBuffer!!, recordingOffset, 0, bufferSamples)
-                            (recordingOffset + bufferSamples) % recordingBufferSamples
-                        } finally {
-                            recordingBufferLock.unlock()
+                        recordingBufferLock.withLock {
+                            audioBuffer.copyInto(recordingBuffer, recordingOffset, 0, bufferSamples)
+                            recordingOffset = (recordingOffset + bufferSamples) % recordingBufferSamples
                         }
                     }
                 }
@@ -277,14 +258,15 @@ internal class AudioDemoView(context: Context) : View(context) {
     /** Start a thread to pull audio samples in continuously.  */
     @Synchronized
     fun startAudioRecord() {
-        if (recordingThread != null && recordingThread!!.isAlive) {
+        if (recordingThread?.isAlive == true) {
             return
         }
-        recordingThread = Thread(AudioRecordingRunnable())
-        recordingThread!!.start()
+        recordingThread = Thread(AudioRecordingRunnable()).apply {
+            start()
+        }
     }
 
-    internal inner class RecognitionRunnable : Runnable {
+    private inner class RecognitionRunnable : Runnable {
         override fun run() {
             if (modelInputLength <= 0 || modelNumClasses <= 0) {
                 Log.e(
@@ -301,20 +283,18 @@ internal class AudioDemoView(context: Context) : View(context) {
                     Log.e(Utils.AUDIO_DEMO_TAG, "Sleep interrupted in recognition thread.")
                 }
                 var samplesAreAllZero = true
-                recordingBufferLock.lock()
-                try {
-                    if (recordingBuffer == null) {
-                        continue
-                    }
+
+                recordingBufferLock.withLock {
                     var j = (recordingOffset - modelInputLength) % modelInputLength
                     if (j < 0) {
                         j += modelInputLength
                     }
+
                     for (i in 0 until modelInputLength) {
                         val s = if (i >= POINTS_IN_AVG && j >= POINTS_IN_AVG) {
-                            ((j - POINTS_IN_AVG + 1)..j).map { recordingBuffer!![it % modelInputLength] }.average()
+                            ((j - POINTS_IN_AVG + 1)..j).map { recordingBuffer[it % modelInputLength] }.average()
                         } else {
-                            recordingBuffer!![j % modelInputLength]
+                            recordingBuffer[j % modelInputLength]
                         }
                         j += 1
 
@@ -325,8 +305,6 @@ internal class AudioDemoView(context: Context) : View(context) {
                         // AudioSource and using bulk put() instead of sample-by-sample put() here.
                         inputBuffer!!.put(i, s.toFloat())
                     }
-                } finally {
-                    recordingBufferLock.unlock()
                 }
                 if (samplesAreAllZero) {
                     Log.w(
@@ -350,8 +328,9 @@ internal class AudioDemoView(context: Context) : View(context) {
 
     /** Start a thread that runs model inference (i.e., recognition) at a regular interval.  */
     private fun startRecognition() {
-        val recognitionThread = Thread(RecognitionRunnable())
-        recognitionThread.start()
+        recognitionThread = Thread(RecognitionRunnable()).apply {
+            start()
+        }
     }
 
     companion object {
