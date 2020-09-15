@@ -10,7 +10,7 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="#8000"
+        android:background="@color/colorPrimary"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -22,12 +22,28 @@
             android:src="@drawable/tfl2_logo" />
     </androidx.appcompat.widget.Toolbar>
 
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/input_switch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="64dp"
+        android:checked="true"
+        android:text="@string/label_input"
+        android:textColor="@color/dark_blue_gray800"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/toolbar"
+        app:switchPadding="12dp"
+        app:useMaterialThemeColors="true" />
+
     <TextView
         android:id="@+id/overlap_factor_text_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/overlap_factor_label"
-        android:textColor="@color/colorPrimaryDark"
+        android:textColor="@color/dark_blue_gray800"
         android:textSize="18sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="@id/input_switch"
@@ -52,18 +68,19 @@
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="40dp"
+        android:layout_marginTop="36dp"
         android:layout_marginEnd="16dp"
-        android:background="@color/gray400"
+        android:background="@color/gray700"
         app:layout_constraintTop_toBottomOf="@id/overlap_factor_text_view" />
 
     <TextView
         android:id="@+id/background_noise_text_view"
-        android:layout_width="80sp"
+        android:layout_width="92sp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:text="@string/label_background_noise"
-        android:textColor="#5d85c8"
+        android:textColor="@color/light_blue"
+        android:textSize="16sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@+id/background_noise_progress_bar"
         app:layout_constraintStart_toStartOf="parent"
@@ -89,7 +106,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/label_snaps"
-        android:textColor="#5d85c8"
+        android:textColor="@color/light_blue"
+        android:textSize="16sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@+id/snap_progress_bar"
         app:layout_constraintStart_toStartOf="@+id/background_noise_text_view"
@@ -114,7 +132,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/label_claps"
-        android:textColor="#5d85c8"
+        android:textColor="@color/light_blue"
+        android:textSize="16sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@+id/clap_progress_bar"
         app:layout_constraintStart_toStartOf="@+id/snap_text_view"
@@ -133,22 +152,5 @@
         app:layout_constraintStart_toStartOf="@+id/snap_progress_bar"
         app:layout_constraintTop_toBottomOf="@+id/snap_progress_bar"
         tools:progress="25" />
-
-    <com.google.android.material.switchmaterial.SwitchMaterial
-        android:id="@+id/input_switch"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="64dp"
-        android:checked="true"
-        android:text="@string/label_input"
-        android:textColor="@color/colorPrimaryDark"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/toolbar"
-        app:switchPadding="12dp"
-        app:useMaterialThemeColors="true" />
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>
