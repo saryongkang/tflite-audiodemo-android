@@ -1,8 +1,10 @@
 package com.google.euphonia.trainableswitches.audiodemo
 
+import android.animation.ObjectAnimator
 import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.view.animation.DecelerateInterpolator
 import androidx.recyclerview.widget.RecyclerView
 import com.google.euphonia.trainableswitches.audiodemo.databinding.ItemProbabilityBinding
 import java.util.*
@@ -17,13 +19,18 @@ class ProbabilitiesAdapter : RecyclerView.Adapter<ProbabilitiesAdapter.ViewHolde
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val (className, probability) = probabilityList[position]
-        with(holder) {
-            binding.labelTextView.text = className.toTitleCase()
-            binding.progressBar.progressBackgroundTintList =
-                progressColorPairList[position % 3].first
-            binding.progressBar.progressTintList = progressColorPairList[position % 3].second
-            binding.progressBar.progress = (probability * 100).toInt()
+        val (label, probability) = probabilityList[position]
+        with(holder.binding) {
+            labelTextView.text = label.toTitleCase()
+            progressBar.progressBackgroundTintList = progressColorPairList[position % 3].first
+            progressBar.progressTintList = progressColorPairList[position % 3].second
+
+            val newValue = (probability * 100).toInt()
+            val animation =
+                ObjectAnimator.ofInt(progressBar, "progress", progressBar.progress, newValue)
+            animation.duration = 250
+            animation.interpolator = DecelerateInterpolator()
+            animation.start()
         }
     }
 
