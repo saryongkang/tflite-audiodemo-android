@@ -24,12 +24,15 @@ import kotlin.concurrent.withLock
 import kotlin.math.ceil
 import kotlin.math.sin
 
+/** Pair of (className: String, val value: Float) */
+typealias Probability = Pair<String, Float>
+
 public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
     val isRecording: Boolean
         get() = recordingThread?.isAlive == true
 
-    private val _probabilities = MutableLiveData<FloatArray>()
-    val probabilities: LiveData<FloatArray>
+    private val _probabilities = MutableLiveData<List<Probability>>()
+    val probabilities: LiveData<List<Probability>>
         get() = _probabilities
 
     var isClosed: Boolean = true
@@ -117,7 +120,7 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
         recordingThread?.interrupt()
         recognitionThread?.interrupt()
 
-        _probabilities.postValue(FloatArray(3) { 0f })
+        _probabilities.postValue(classNames.zip(listOf(0f, 0f, 0f)))
     }
 
     fun close() {
@@ -362,10 +365,10 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
                 outputBuffer.rewind()
                 outputBuffer.get(predictionProbs) // Copy data to predictionProbs.
 
-                val probArray = predictionProbs.map {
+                val probList = predictionProbs.map {
                     if (it > PROB_THRESHOLD) it else 0f
-                }.toFloatArray()
-                _probabilities.postValue(probArray)
+                }
+                _probabilities.postValue(classNames.zip(probList))
 
                 latestPredictionLatencyMs =
                     ((SystemClock.elapsedRealtimeNanos() - t0) / 1e6).toFloat()
@@ -397,7 +400,7 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
         private const val NUM_WARMUP_RUNS = 3
 
         /** Probability value above which a class is labeled as active (i.e., detected) the display.  */
-        private const val PROB_THRESHOLD = 0.4f
+        private const val PROB_THRESHOLD = 0.2f
 
         private const val POINTS_IN_AVG = 10
     }

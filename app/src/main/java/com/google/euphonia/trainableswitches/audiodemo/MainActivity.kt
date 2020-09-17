@@ -8,11 +8,13 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import com.google.euphonia.trainableswitches.audiodemo.Utils.AUDIO_DEMO_TAG
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.euphonia.trainableswitches.audiodemo.databinding.ActivityMainBinding
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
+    private val probabilitiesAdapter by lazy { ProbabilitiesAdapter() }
+
     private lateinit var soundClassifier: SoundClassifier
 
     // TODO: Uncomment this when androidx.activity library become stable
@@ -41,18 +43,15 @@ class MainActivity : AppCompatActivity() {
                 Log.w(Utils.AUDIO_DEMO_TAG, "Invalid probability output!")
                 return@observe
             }
-            binding.backgroundNoiseProgressBar.progress = (probs[0] * 100).toInt()
-            binding.snapProgressBar.progress = (probs[1] * 100).toInt()
-            binding.clapProgressBar.progress = (probs[2] * 100).toInt()
-
-//            probs.forEachIndexed { i, prob ->
-//                Log.d(">>>", "%d: %.6f".format(i, prob))
-//            }
+            probabilitiesAdapter.probabilityList = probs
+            probabilitiesAdapter.notifyDataSetChanged()
         }
 
-        binding.backgroundNoiseTextView.text = soundClassifier.classNames[0].toTitleCase()
-        binding.snapTextView.text = soundClassifier.classNames[1].toTitleCase()
-        binding.clapTextView.text = soundClassifier.classNames[2].toTitleCase()
+        binding.recyclerView.apply {
+            setHasFixedSize(true)
+            layoutManager = LinearLayoutManager(this@MainActivity)
+            adapter = probabilitiesAdapter
+        }
 
         binding.inputSwitch.setOnCheckedChangeListener { _, isChecked ->
             soundClassifier.isPaused = !isChecked
@@ -107,8 +106,3 @@ class MainActivity : AppCompatActivity() {
         const val REQUEST_RECORD_AUDIO = 1337
     }
 }
-
-private fun String.toTitleCase() =
-    splitToSequence("_")
-        .map { it.capitalize(Locale.ROOT) }
-        .joinToString(" ")

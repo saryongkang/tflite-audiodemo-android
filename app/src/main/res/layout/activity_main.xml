@@ -73,84 +73,13 @@
         android:background="@color/gray700"
         app:layout_constraintTop_toBottomOf="@id/overlap_factor_text_view" />
 
-    <TextView
-        android:id="@+id/background_noise_text_view"
-        android:layout_width="92sp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:text="@string/label_background_noise"
-        android:textColor="@color/light_blue"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/background_noise_progress_bar"
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recycler_view"
+        android:layout_width="match_parent"
+        android:scrollbars="vertical"
+        android:layout_height="200dp"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/background_noise_progress_bar" />
-
-    <ProgressBar
-        android:id="@+id/background_noise_progress_bar"
-        style="@android:style/Widget.ProgressBar.Horizontal"
-        android:layout_width="0dp"
-        android:layout_height="20dp"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="40dp"
-        android:layout_marginEnd="16dp"
-        android:progressBackgroundTint="#f9e7e4"
-        android:progressTint="#d97c2e"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/background_noise_text_view"
-        app:layout_constraintTop_toTopOf="@id/divider_view"
-        tools:progress="25" />
-
-    <TextView
-        android:id="@+id/snap_text_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/label_snaps"
-        android:textColor="@color/light_blue"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/snap_progress_bar"
-        app:layout_constraintStart_toStartOf="@+id/background_noise_text_view"
-        app:layout_constraintTop_toTopOf="@+id/snap_progress_bar" />
-
-    <ProgressBar
-        android:id="@+id/snap_progress_bar"
-        style="@android:style/Widget.ProgressBar.Horizontal"
-        android:layout_width="0dp"
-        android:layout_height="20dp"
-        android:layout_marginTop="30dp"
-        android:layout_marginEnd="16dp"
-        android:progressBackgroundTint="#f7e3e8"
-        android:progressTint="#c95670"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@+id/background_noise_progress_bar"
-        app:layout_constraintTop_toBottomOf="@+id/background_noise_progress_bar"
-        tools:progress="25" />
-
-    <TextView
-        android:id="@+id/clap_text_view"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/label_claps"
-        android:textColor="@color/light_blue"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="@+id/clap_progress_bar"
-        app:layout_constraintStart_toStartOf="@+id/snap_text_view"
-        app:layout_constraintTop_toTopOf="@+id/clap_progress_bar" />
-
-    <ProgressBar
-        android:id="@+id/clap_progress_bar"
-        style="@android:style/Widget.ProgressBar.Horizontal"
-        android:layout_width="0dp"
-        android:layout_height="20dp"
-        android:layout_marginTop="30dp"
-        android:layout_marginEnd="16dp"
-        android:progressBackgroundTint="#ecf0f9"
-        android:progressTint="#714Fe7"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="@+id/snap_progress_bar"
-        app:layout_constraintTop_toBottomOf="@+id/snap_progress_bar"
-        tools:progress="25" />
+        app:layout_constraintTop_toTopOf="@id/divider_view" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
