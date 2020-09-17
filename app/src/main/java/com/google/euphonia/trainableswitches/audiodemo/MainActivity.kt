@@ -74,6 +74,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onTopResumedActivityChanged(isTopResumedActivity: Boolean) {
+        if (isTopResumedActivity) {
+            soundClassifier.start()
+        } else {
+            soundClassifier.stop()
+        }
+    }
+
     // TODO: Remove this when androidx.activity library become stable
     override fun onRequestPermissionsResult(
         requestCode: Int,

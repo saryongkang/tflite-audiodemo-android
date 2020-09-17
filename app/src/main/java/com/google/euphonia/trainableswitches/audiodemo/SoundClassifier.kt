@@ -46,9 +46,8 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
     /** Paused by user */
     var isPaused: Boolean = false
         set(value) {
-            field = value.also {
-                if (it) stop() else start()
-            }
+            field = value
+            if (value) stop() else start()
         }
 
     var overlapFactor: Float = DEFAULT_OVERLAP_FACTOR
@@ -96,22 +95,19 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
         warmUpModel()
     }
 
-    override fun onResume(owner: LifecycleOwner) {
-        if (!isPaused) {
-            start()
-        }
-    }
+    override fun onResume(owner: LifecycleOwner) = start()
 
     override fun onPause(owner: LifecycleOwner) = stop()
 
     override fun onDestroy(owner: LifecycleOwner) = close()
 
-    fun start() = startAudioRecord()
+    fun start() {
+        if (!isPaused) {
+            startAudioRecord()
+        }
+    }
 
     fun stop() {
-        Log.d(">>>", "Stopping..")
-        Log.d(">>>", "$isClosed - $isRecording")
-
         if (isClosed || !isRecording) {
             return
         }
