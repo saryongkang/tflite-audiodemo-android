@@ -194,7 +194,7 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
                 TAG,
                 "Switches: Done calling interpreter.run(): %s (%.6f ms)".format(
                     outputBuffer.array().contentToString(),
-                    (SystemClock.elapsedRealtimeNanos() - t0) / Utils.NANOS_IN_MILLIS.toFloat()
+                    (SystemClock.elapsedRealtimeNanos() - t0) / NANOS_IN_MILLIS
                 )
             )
         }
@@ -377,6 +377,9 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
 
         /** Path of the converted .tflite file, relative to the assets/ directory.  */
         private const val MODEL_PATH = "combined_model.tflite"
+
+        /** Number of nanoseconds in a millisecond  */
+        private const val NANOS_IN_MILLIS = 1_000_000.toDouble()
 
         /** Hard code the required audio sample rate in Hz.  */
         private const val SAMPLE_RATE_HZ = 44100

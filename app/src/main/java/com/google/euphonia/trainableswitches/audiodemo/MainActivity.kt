@@ -11,7 +11,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.euphonia.trainableswitches.audiodemo.databinding.ActivityMainBinding
-import java.util.*
 
 class MainActivity : AppCompatActivity() {
     private val probabilitiesAdapter by lazy { ProbabilitiesAdapter() }
@@ -41,7 +40,7 @@ class MainActivity : AppCompatActivity() {
 
         soundClassifier.probabilities.observe(this) { probs ->
             if (probs.isEmpty() || probs.size > 3) {
-                Log.w(Utils.AUDIO_DEMO_TAG, "Invalid probability output!")
+                Log.w(AUDIO_DEMO_TAG, "Invalid probability output!")
                 return@observe
             }
             probabilitiesAdapter.probabilityList = probs
@@ -91,7 +90,6 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == REQUEST_RECORD_AUDIO) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Log.i(AUDIO_DEMO_TAG, "Audio permission granted :)")
-                //audioDemoView.startAudioRecord()
                 soundClassifier.start()
 
             } else {
@@ -107,7 +105,6 @@ class MainActivity : AppCompatActivity() {
                 Manifest.permission.RECORD_AUDIO
             ) == PackageManager.PERMISSION_GRANTED
         ) {
-            //audioDemoView.startAudioRecord()
             soundClassifier.start()
         } else {
             // TODO: Uncomment this when androidx.activity library become stable
@@ -118,5 +115,6 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val REQUEST_RECORD_AUDIO = 1337
+        const val AUDIO_DEMO_TAG = "AudioDemo"
     }
 }
