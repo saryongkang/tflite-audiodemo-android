@@ -10,8 +10,6 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.google.gson.JsonObject
-import com.google.gson.JsonParser
 import org.tensorflow.lite.Interpreter
 import org.tensorflow.lite.support.common.FileUtil
 import java.io.BufferedReader
@@ -75,7 +73,7 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
     private var modelNumClasses = 0
 
     /** Names of the model's output classes.  */
-    lateinit var classNames: Array<String> // TODO async
+    lateinit var labelList: List<String>
 
     /** Used to hold the real-time probabilities predicted by the model for the output classes.  */
     private lateinit var predictionProbs: FloatArray
@@ -93,7 +91,7 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
     private lateinit var inputBuffer: FloatBuffer
 
     init {
-        loadModelMetadata(context)
+        loadWordLabels(context)
         setupInterpreter(context)
         warmUpModel()
     }
@@ -120,7 +118,7 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
         recordingThread?.interrupt()
         recognitionThread?.interrupt()
 
-        _probabilities.postValue(classNames.zip(listOf(0f, 0f, 0f)))
+        _probabilities.postValue(labelList.zip(listOf(0f, 0f, 0f)))
     }
 
     fun close() {
@@ -134,18 +132,17 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
         isClosed = true
     }
 
-    // Retrieve class names from metadata
-    private fun loadModelMetadata(context: Context) {
+    // Retrieve word labels from "labels.txt" file
+    private fun loadWordLabels(context: Context) {
         try {
             val reader = BufferedReader(InputStreamReader(context.assets.open(METADATA_PATH)))
-            val jsonStringBuilder = StringBuilder()
+            val wordList = mutableListOf<String>()
             reader.useLines { lines ->
-                lines.forEach { jsonStringBuilder.append(it) }
+                lines.forEach {
+                    wordList.add(it.split(" ").last())
+                }
             }
-
-            val metadata = JsonParser.parseString(jsonStringBuilder.toString()) as JsonObject
-            val wordLabels = metadata[WORD_LABELS_KEY].asJsonArray
-            classNames = wordLabels.map { it.asString }.toTypedArray()
+            labelList = wordList
         } catch (e: IOException) {
             Log.e(TAG, "Failed to read model metadata.json: ${e.message}")
         }
@@ -174,10 +171,10 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
         val outputShape = interpreter.getOutputTensor(0).shape()
         Log.i(TAG, "TFLite output shape: ${outputShape.contentToString()}")
         modelNumClasses = outputShape[1]
-        if (modelNumClasses != classNames.size) {
+        if (modelNumClasses != labelList.size) {
             Log.e(
                 TAG,
-                "Mismatch between metadata number of classes (${classNames.size})" + " and model output length (${modelNumClasses})"
+                "Mismatch between metadata number of classes (${labelList.size})" + " and model output length (${modelNumClasses})"
             )
         }
         // Fill the array with NaNs initially.
@@ -368,7 +365,7 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
                 val probList = predictionProbs.map {
                     if (it > PROB_THRESHOLD) it else 0f
                 }
-                _probabilities.postValue(classNames.zip(probList))
+                _probabilities.postValue(labelList.zip(probList))
 
                 latestPredictionLatencyMs =
                     ((SystemClock.elapsedRealtimeNanos() - t0) / 1e6).toFloat()
@@ -379,16 +376,13 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
     companion object {
         private const val TAG = "SoundClassifier"
 
-        /** Path of the converted model metadata file, relative to the assets/ directory.  */
-        private const val METADATA_PATH = "metadata.json"
-
-        /** JSON key string for word labels in the metadata JSON file.  */
-        private const val WORD_LABELS_KEY = "wordLabels"
+        /** Path of the converted model label file, relative to the assets/ directory.  */
+        private const val METADATA_PATH = "labels.txt"
 
         /** Path of the converted .tflite file, relative to the assets/ directory.  */
         private const val MODEL_PATH = "combined_model.tflite"
 
-        /** Hard code the required audio rample rate in Hz.  */
+        /** Hard code the required audio sample rate in Hz.  */
         private const val SAMPLE_RATE_HZ = 44100
 
         /** How many milliseconds to sleep between successive audio sample pulls.  */
