@@ -5,6 +5,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.WindowManager
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -55,6 +56,11 @@ class MainActivity : AppCompatActivity() {
 
         binding.inputSwitch.setOnCheckedChangeListener { _, isChecked ->
             soundClassifier.isPaused = !isChecked
+            if (isChecked) {
+                window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            } else {
+                window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+            }
         }
 
         binding.overlapFactorSlider.addOnChangeListener { _, value, _ ->
