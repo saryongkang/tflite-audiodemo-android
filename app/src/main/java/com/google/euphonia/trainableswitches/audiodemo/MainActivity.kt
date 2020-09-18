@@ -44,6 +44,7 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        binding.overlapFactorSlider.value = SoundClassifier.DEFAULT_OVERLAP_FACTOR
         binding.overlapFactorSlider.addOnChangeListener { _, value, _ ->
             soundClassifier.overlapFactor = value
         }

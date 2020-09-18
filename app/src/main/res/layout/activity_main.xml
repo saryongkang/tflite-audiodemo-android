@@ -55,13 +55,13 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="8dp"
         android:layout_marginEnd="16dp"
-        android:value="0.8"
         android:valueFrom="0.0"
         android:valueTo="1.0"
         app:layout_constraintBottom_toBottomOf="@+id/overlap_factor_text_view"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/overlap_factor_text_view"
-        app:layout_constraintTop_toTopOf="@id/overlap_factor_text_view" />
+        app:layout_constraintTop_toTopOf="@id/overlap_factor_text_view"
+        tools:value="0.8" />
 
     <View
         android:id="@+id/divider_view"
@@ -76,12 +76,12 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_view"
         android:layout_width="match_parent"
-        android:scrollbars="vertical"
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
+        android:scrollbars="vertical"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toTopOf="@id/divider_view" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

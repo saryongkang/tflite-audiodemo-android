@@ -27,7 +27,7 @@ class SoundClassifier(context: Context) : DefaultLifecycleObserver {
     val isRecording: Boolean
         get() = recordingThread?.isAlive == true
 
-    private val _probabilities = MutableLiveData<List<Probability>>()
+    /** As the result of sound classification, this value emits map of probabilities */
     val probabilities: LiveData<Map<String, Float>>
         get() = _probabilities
     private val _probabilities = MutableLiveData<Map<String, Float>>()
