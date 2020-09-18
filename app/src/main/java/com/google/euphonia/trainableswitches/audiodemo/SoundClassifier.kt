@@ -16,22 +16,23 @@ import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 import java.nio.FloatBuffer
+import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import kotlin.math.ceil
 import kotlin.math.sin
 
-/** Pair of (className: String, val value: Float) */
-typealias Probability = Pair<String, Float>
-
-public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
+class SoundClassifier(context: Context) : DefaultLifecycleObserver {
     val isRecording: Boolean
         get() = recordingThread?.isAlive == true
 
     private val _probabilities = MutableLiveData<List<Probability>>()
-    val probabilities: LiveData<List<Probability>>
+    val probabilities: LiveData<Map<String, Float>>
         get() = _probabilities
+    private val _probabilities = MutableLiveData<Map<String, Float>>()
+
+    private val recordingBufferLock: ReentrantLock = ReentrantLock()
 
     var isClosed: Boolean = true
         private set
@@ -57,7 +58,9 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
             }
         }
 
-    private val recordingBufferLock: ReentrantLock = ReentrantLock()
+    /** Names of the model's output classes.  */
+    lateinit var labelList: List<String>
+        private set
 
     /** How many milliseconds between consecutive model inference calls.  */
     private var recognitionPeriod = (1000L * (1 - DEFAULT_OVERLAP_FACTOR)).toLong()
@@ -70,9 +73,6 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
 
     /** Number of output classes of the TFLite model.  */
     private var modelNumClasses = 0
-
-    /** Names of the model's output classes.  */
-    lateinit var labelList: List<String>
 
     /** Used to hold the real-time probabilities predicted by the model for the output classes.  */
     private lateinit var predictionProbs: FloatArray
@@ -114,7 +114,7 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
         recordingThread?.interrupt()
         recognitionThread?.interrupt()
 
-        _probabilities.postValue(labelList.zip(listOf(0f, 0f, 0f)))
+        _probabilities.postValue(labelList.associateWith { 0f })
     }
 
     fun close() {
@@ -138,7 +138,7 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
                     wordList.add(it.split(" ").last())
                 }
             }
-            labelList = wordList
+            labelList = wordList.map { it.toTitleCase() }
         } catch (e: IOException) {
             Log.e(TAG, "Failed to read model metadata.json: ${e.message}")
         }
@@ -361,7 +361,7 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
                 val probList = predictionProbs.map {
                     if (it > PROB_THRESHOLD) it else 0f
                 }
-                _probabilities.postValue(labelList.zip(probList))
+                _probabilities.postValue(labelList.zip(probList).toMap())
 
                 latestPredictionLatencyMs =
                     ((SystemClock.elapsedRealtimeNanos() - t0) / 1e6).toFloat()
@@ -370,6 +370,8 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
     }
 
     companion object {
+        const val DEFAULT_OVERLAP_FACTOR = 0.8.toFloat()
+
         private const val TAG = "SoundClassifier"
 
         /** Path of the converted model label file, relative to the assets/ directory.  */
@@ -382,19 +384,23 @@ public class SoundClassifier(context: Context) : DefaultLifecycleObserver {
         private const val NANOS_IN_MILLIS = 1_000_000.toDouble()
 
         /** Hard code the required audio sample rate in Hz.  */
-        private const val SAMPLE_RATE_HZ = 44100
+        private const val SAMPLE_RATE_HZ = 44_100
 
         /** How many milliseconds to sleep between successive audio sample pulls.  */
         private const val AUDIO_PULL_PERIOD_MS = 50L
-
-        private const val DEFAULT_OVERLAP_FACTOR = 0.8.toFloat()
 
         /** Number of warm up runs to do after loading the TFLite model.  */
         private const val NUM_WARMUP_RUNS = 3
 
         /** Probability value above which a class is labeled as active (i.e., detected) the display.  */
-        private const val PROB_THRESHOLD = 0.2f
+        private const val PROB_THRESHOLD = 0.3f
 
         private const val POINTS_IN_AVG = 10
     }
 }
+
+private fun String.toTitleCase() =
+    splitToSequence("_")
+        .map { it.capitalize(Locale.ROOT) }
+        .joinToString(" ")
+        .trim()

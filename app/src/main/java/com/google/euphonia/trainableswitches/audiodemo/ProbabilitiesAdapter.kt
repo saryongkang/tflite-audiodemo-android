@@ -4,13 +4,13 @@ import android.animation.ObjectAnimator
 import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.view.animation.DecelerateInterpolator
+import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.recyclerview.widget.RecyclerView
 import com.google.euphonia.trainableswitches.audiodemo.databinding.ItemProbabilityBinding
-import java.util.*
 
-class ProbabilitiesAdapter : RecyclerView.Adapter<ProbabilitiesAdapter.ViewHolder>() {
-    var probabilityList = emptyList<Probability>()
+internal class ProbabilitiesAdapter : RecyclerView.Adapter<ProbabilitiesAdapter.ViewHolder>() {
+    var labelList = emptyList<String>()
+    var probabilityMap = mapOf<String, Float>()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding =
@@ -19,22 +19,25 @@ class ProbabilitiesAdapter : RecyclerView.Adapter<ProbabilitiesAdapter.ViewHolde
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val (label, probability) = probabilityList[position]
+        val label = labelList[position]
+        val probability = probabilityMap[label] ?: 0f
+
         with(holder.binding) {
-            labelTextView.text = label.toTitleCase()
+            labelTextView.text = label
             progressBar.progressBackgroundTintList = progressColorPairList[position % 3].first
             progressBar.progressTintList = progressColorPairList[position % 3].second
 
             val newValue = (probability * 100).toInt()
+            // If you don't want to animate, you can write like `progressBar.progress = newValue`.
             val animation =
                 ObjectAnimator.ofInt(progressBar, "progress", progressBar.progress, newValue)
-            animation.duration = 250
-            animation.interpolator = DecelerateInterpolator()
+            animation.duration = 100
+            animation.interpolator = AccelerateDecelerateInterpolator()
             animation.start()
         }
     }
 
-    override fun getItemCount() = probabilityList.size
+    override fun getItemCount() = labelList.size
 
     class ViewHolder(val binding: ItemProbabilityBinding) : RecyclerView.ViewHolder(binding.root)
 
@@ -47,9 +50,3 @@ class ProbabilitiesAdapter : RecyclerView.Adapter<ProbabilitiesAdapter.ViewHolde
         )
     }
 }
-
-private fun String.toTitleCase() =
-    splitToSequence("_")
-        .map { it.capitalize(Locale.ROOT) }
-        .joinToString(" ")
-        .trim()

@@ -27,19 +27,12 @@ class MainActivity : AppCompatActivity() {
             it.lifecycleOwner = this
         }
 
-        soundClassifier.probabilities.observe(this) { probs ->
-            if (probs.isEmpty() || probs.size > 3) {
-                Log.w(AUDIO_DEMO_TAG, "Invalid probability output!")
-                return@observe
-            }
-            probabilitiesAdapter.probabilityList = probs
-            probabilitiesAdapter.notifyDataSetChanged()
-        }
-
         binding.recyclerView.apply {
             setHasFixedSize(true)
             layoutManager = LinearLayoutManager(this@MainActivity)
-            adapter = probabilitiesAdapter
+            adapter = probabilitiesAdapter.apply {
+                labelList = soundClassifier.labelList
+            }
         }
 
         binding.inputSwitch.setOnCheckedChangeListener { _, isChecked ->
@@ -53,6 +46,15 @@ class MainActivity : AppCompatActivity() {
 
         binding.overlapFactorSlider.addOnChangeListener { _, value, _ ->
             soundClassifier.overlapFactor = value
+        }
+
+        soundClassifier.probabilities.observe(this) { resultMap ->
+            if (resultMap.isEmpty() || resultMap.size > soundClassifier.labelList.size) {
+                Log.w(TAG, "Invalid size of probability output! (size: ${resultMap.size})")
+                return@observe
+            }
+            probabilitiesAdapter.probabilityMap = resultMap
+            probabilitiesAdapter.notifyDataSetChanged()
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -77,11 +79,10 @@ class MainActivity : AppCompatActivity() {
     ) {
         if (requestCode == REQUEST_RECORD_AUDIO) {
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.i(AUDIO_DEMO_TAG, "Audio permission granted :)")
+                Log.i(TAG, "Audio permission granted :)")
                 soundClassifier.start()
-
             } else {
-                Log.e(AUDIO_DEMO_TAG, "Audio permission not granted :(")
+                Log.e(TAG, "Audio permission not granted :(")
             }
         }
     }
@@ -101,6 +102,6 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val REQUEST_RECORD_AUDIO = 1337
-        const val AUDIO_DEMO_TAG = "AudioDemo"
+        private const val TAG = "AudioDemo"
     }
 }
