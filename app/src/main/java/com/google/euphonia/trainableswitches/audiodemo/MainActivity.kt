@@ -17,17 +17,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var soundClassifier: SoundClassifier
 
-    // TODO: Uncomment this when androidx.activity library become stable
-//    private val requestPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-//            isGranted: Boolean ->
-//        if (isGranted) {
-//            Log.i(AUDIO_DEMO_TAG, "Audio permission granted :)");
-//            audioDemoView.startAudioRecord();
-//        } else {
-//            Log.e(AUDIO_DEMO_TAG, "Audio permission not granted :(");
-//        }
-//    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -81,7 +70,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // TODO: Remove this when androidx.activity library become stable
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -107,8 +95,6 @@ class MainActivity : AppCompatActivity() {
         ) {
             soundClassifier.start()
         } else {
-            // TODO: Uncomment this when androidx.activity library become stable
-//            requestPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
             requestPermissions(arrayOf(Manifest.permission.RECORD_AUDIO), REQUEST_RECORD_AUDIO)
         }
     }
