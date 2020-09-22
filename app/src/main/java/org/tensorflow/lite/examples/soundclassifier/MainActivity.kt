@@ -1,4 +1,20 @@
-package com.google.euphonia.trainableswitches.audiodemo
+/*
+ * Copyright 2020 The TensorFlow Authors. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.tensorflow.lite.examples.soundclassifier
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -10,7 +26,7 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.google.euphonia.trainableswitches.audiodemo.databinding.ActivityMainBinding
+import org.tensorflow.lite.examples.soundclassifier.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
     private val probabilitiesAdapter by lazy { ProbabilitiesAdapter() }
@@ -29,7 +45,6 @@ class MainActivity : AppCompatActivity() {
 
         binding.recyclerView.apply {
             setHasFixedSize(true)
-            layoutManager = LinearLayoutManager(this@MainActivity)
             adapter = probabilitiesAdapter.apply {
                 labelList = soundClassifier.labelList
             }
@@ -66,6 +81,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onTopResumedActivityChanged(isTopResumedActivity: Boolean) {
+        // Handles "top" resumed event on multi-window environment
         if (isTopResumedActivity) {
             soundClassifier.start()
         } else {

@@ -1,8 +1,5 @@
 <resources>
-    <string name="app_name">AudioDemo</string>
-    <string name="label_background_noise">Background Noise</string>
-    <string name="label_snaps">Snaps</string>
-    <string name="label_claps">Claps</string>
+    <string name="app_name">Sound Classifier</string>
     <string name="label_input">Input:</string>
     <string name="overlap_factor_label">Overlap Factor</string>
     <string name="tensorflow_lite_logo">TensorFlow Lite Logo</string>
