@@ -39,13 +39,13 @@
         android:layout_height="20dp"
         android:layout_marginStart="12dp"
         android:layout_marginTop="16dp"
-        android:layout_marginBottom="16dp"
         android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
         android:progressBackgroundTint="#f9e7e4"
         android:progressTint="#d97c2e"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/label_text_view"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
         tools:progress="25" />
 </androidx.constraintlayout.widget.ConstraintLayout>

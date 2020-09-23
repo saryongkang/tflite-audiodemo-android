@@ -93,9 +93,12 @@
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
         android:scrollbars="vertical"
+        app:layoutManager="LinearLayoutManager"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@id/divider_view" />
+        app:layout_constraintTop_toTopOf="@id/divider_view"
+        tools:itemCount="3"
+        tools:listitem="@layout/item_probability" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
